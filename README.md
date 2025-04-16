@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./swaggler.png" alt="Logo" width="150"/>
+  <img src="https://github.com/Farzin-Firoozi/swaggler/blob/main/swaggler.png" alt="Logo" width="150"/>
 </p>
 
 # Swaggler
