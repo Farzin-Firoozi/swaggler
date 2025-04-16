@@ -1,10 +1,15 @@
 <p align="center">
-  <img src="https://github.com/Farzin-Firoozi/swaggler/blob/main/swaggler.png" alt="Logo" width="150"/>
+  <img src="https://github.com/Farzin-Firoozi/swaggler/blob/main/swaggler.png" alt="Logo" width="300"/>
 </p>
 
 # Swaggler
 
 A CLI tool to convert curl commands and response examples to OpenAPI documentation. Swaggler helps you smuggle your existing API requests into structured, well-documented specs with ease.
+
+[![NPM](https://img.shields.io/npm/v/swaggler.svg)](https://www.npmjs.com/package/swaggler)
+![npm](https://img.shields.io/npm/dt/swaggler)
+![npm](https://img.shields.io/npm/dw/swaggler)
+![NPM](https://img.shields.io/npm/l/swaggler)
 
 ## Features
 
