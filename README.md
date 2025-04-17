@@ -45,6 +45,7 @@ swaggler generate -c "curl https://api.example.com/users" -o swagger.yaml
 - `-t, --tag <tag>` - Tag for the operation
 - `-p, --output-path <path>` - Output file path and directory
 - `-a, --append <file>` - Append to existing swagger file
+- `-S, --summary <summary>` - Custom summary for the operation
 - `-x, --skip-execution` - Skip executing the curl command and use provided response
 - `-r, --response <response>` - JSON response to use when skip-execution is true
 
@@ -59,6 +60,9 @@ swaggler generate -i curl-commands.txt -o users-api.yaml
 
 # Generate with custom operation name and tags
 swaggler generate -c "curl https://api.example.com/users/123" -n "getUser" -t "users" -o users-api.yaml -s /users/{id}
+
+# Generate with custom summary
+swaggler generate -c "curl https://api.example.com/users" -S "Retrieve all users" -o users-api.yaml
 
 # Append to existing swagger file
 swaggler generate -c "curl https://api.example.com/users" -a existing-swagger.yaml

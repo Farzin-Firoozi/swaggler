@@ -4,6 +4,7 @@ import { SwagglerException } from "../errors/SwagglerException";
 import * as yaml from "js-yaml";
 import * as fs from "fs";
 import * as path from "path";
+import { capitalizeFirstLetter } from "../utils";
 
 export class OpenAPIGenerator {
   private static getOpenAPIType(
@@ -236,8 +237,7 @@ export class OpenAPIGenerator {
       curl.url.split("?")[0].replace(/^https?:\/\/[^\/]+/, "");
     const operationId =
       options.operationName || this.generateOperationId(curl.method, pathName);
-    const schemaPrefix =
-      operationId.charAt(0).toUpperCase() + operationId.slice(1);
+    const schemaPrefix = capitalizeFirstLetter(operationId);
 
     // Create a schemas object to store all generated schemas
     const schemas: Record<string, OpenAPISchema> = {};
@@ -289,12 +289,12 @@ export class OpenAPIGenerator {
         [pathName]: {
           [curl.method.toLowerCase()]: {
             operationId,
-            summary: `${curl.method} ${pathName}`,
-            tags: options.tags
-              ? options.tags.map(
-                  (tag) => tag.charAt(0).toUpperCase() + tag.slice(1)
-                )
-              : [],
+            summary:
+              options?.summary ||
+              (options?.operationName
+                ? capitalizeFirstLetter(options.operationName)
+                : `${curl.method} ${pathName}`),
+            tags: options.tags ? options.tags.map(capitalizeFirstLetter) : [],
             parameters: this.generateParameters(
               curl,
               pathName,

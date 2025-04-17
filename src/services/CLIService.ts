@@ -39,6 +39,7 @@ export class CLIService {
       .option("-t, --tag <tag>", "Tag for the operation")
       .option("-p, --output-path <path>", "Output file path and directory")
       .option("-a, --append <file>", "Append to existing swagger file")
+      .option("-S, --summary <summary>", "Custom summary for the operation")
       .option(
         "-x, --skip-execution",
         "Skip executing the curl command and use provided response",
@@ -123,7 +124,7 @@ export class CLIService {
             tags: options.tag ? [options.tag] : undefined,
             outputPath: options.outputPath,
             appendPath: options.append,
-            version: options.version,
+            summary: options.summary,
           };
 
           // Generate OpenAPI documentation

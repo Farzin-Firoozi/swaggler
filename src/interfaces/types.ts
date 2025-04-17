@@ -23,5 +23,5 @@ export interface OpenAPIOptions {
   tags?: string[];
   outputPath?: string;
   appendPath?: string;
-  version?: "2.0" | "3.0" | "3.1";
+  summary?: string;
 }
