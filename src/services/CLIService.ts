@@ -29,6 +29,7 @@ export class CLIService {
         "-c, --curl <curl>",
         "Curl command to convert or path to a file containing curl command"
       )
+      .option("-i, --input <input>", "Path to a file containing curl command")
       .option("-o, --output <output>", "Output file path", "swagger.yaml")
       .option("-n, --name <name>", "Operation name", "")
       .option(
@@ -50,8 +51,8 @@ export class CLIService {
       .action(async (options) => {
         try {
           // Validate input options
-          if (!options.curl) {
-            throw new Error("--curl option must be provided");
+          if (!options.curl && !options.input) {
+            throw new Error("Either --curl or --input option must be provided");
           }
 
           let curlCommand = options.curl;
@@ -59,7 +60,12 @@ export class CLIService {
 
           // Handle curl command
           // Check if the curl input is a file path
-          if (fs.existsSync(options.curl)) {
+          if (options.input) {
+            if (!fs.existsSync(options.input)) {
+              throw new Error(`Input file not found: ${options.input}`);
+            }
+            curlCommand = fs.readFileSync(options.input, "utf-8").trim();
+          } else if (fs.existsSync(options.curl)) {
             curlCommand = fs.readFileSync(options.curl, "utf-8").trim();
           }
 

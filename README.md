@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/Farzin-Firoozi/swaggler/blob/main/swaggler.png" alt="Logo" width="300"/>
+  <img src="https://github.com/Farzin-Firoozi/swaggler/blob/main/swaggler.png?raw=true" alt="Logo" width="300"/>
 </p>
 
 # Swaggler
@@ -37,13 +37,16 @@ swaggler generate -c "curl https://api.example.com/users" -o swagger.yaml
 
 ### Options
 
-- `-c, --curl <curl>` - Curl command to convert (required)
+- `-c, --curl <curl>` - Curl command to convert or path to a file containing curl command
+- `-i, --input <input>` - Path to a file containing curl command
 - `-o, --output <output>` - Output file path (default: swagger.yaml)
 - `-n, --name <name>` - Operation name
 - `-s, --schema <schema>` - URL template with parameters (e.g. /users/:id)
 - `-t, --tag <tag>` - Tag for the operation
-- `-O, --output-path <path>` - Output file path and directory
+- `-p, --output-path <path>` - Output file path and directory
 - `-a, --append <file>` - Append to existing swagger file
+- `-x, --skip-execution` - Skip executing the curl command and use provided response
+- `-r, --response <response>` - JSON response to use when skip-execution is true
 
 ### Examples
 
@@ -51,11 +54,17 @@ swaggler generate -c "curl https://api.example.com/users" -o swagger.yaml
 # Generate OpenAPI documentation from a curl command
 swaggler generate -c "curl -X POST https://api.example.com/users -H 'Content-Type: application/json' -d '{\"name\": \"John Doe\"}'" -o users-api.yaml
 
+# Generate from a file containing curl command
+swaggler generate -i curl-commands.txt -o users-api.yaml
+
 # Generate with custom operation name and tags
 swaggler generate -c "curl https://api.example.com/users/123" -n "getUser" -t "users" -o users-api.yaml
 
 # Append to existing swagger file
 swaggler generate -c "curl https://api.example.com/users" -a existing-swagger.yaml
+
+# Skip curl execution and use provided response
+swaggler generate -c "curl https://api.example.com/users" -x -r '{"users": [{"id": 1, "name": "John"}]}'
 ```
 
 ## Development
