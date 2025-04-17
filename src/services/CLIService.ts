@@ -153,13 +153,18 @@ export class CLIService {
 
           // Save to file
           OpenAPIGenerator.saveToFile(openapi, openAPIOptions);
-
           console.log(
-            `OpenAPI ${options.version} documentation generated and saved to ${
+            `────────────────────────────────────────────────────────────────────`
+          );
+          console.log(
+            `🥳🚀 OpenAPI documentation generated and saved to ${
               openAPIOptions.outputPath ||
               openAPIOptions.appendPath ||
               "swagger.yaml"
-            }`
+            } `
+          );
+          console.log(
+            `────────────────────────────────────────────────────────────────────`
           );
         } catch (error) {
           if (error instanceof SwagglerException) {

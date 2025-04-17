@@ -29,7 +29,6 @@ export class OpenAPIGenerator {
       return {
         type: "object",
         properties: {},
-        required: [],
       };
     }
 
@@ -52,7 +51,11 @@ export class OpenAPIGenerator {
       }
       return {
         type: "array",
-        items: { type: "object", properties: {} },
+        items: {
+          type: "object",
+          properties: {},
+          required: [],
+        },
       };
     }
 
@@ -60,7 +63,6 @@ export class OpenAPIGenerator {
       const schema: OpenAPISchema = {
         type: "object",
         properties: {},
-        required: [],
       };
 
       Object.entries(data).forEach(([key, value]) => {
@@ -90,7 +92,10 @@ export class OpenAPIGenerator {
           } else {
             schema.properties![key] = {
               type: "array",
-              items: { type: "object", properties: {} },
+              items: {
+                type: "object",
+                properties: {},
+              },
             };
           }
         } else if (typeof value === "object") {
@@ -112,15 +117,6 @@ export class OpenAPIGenerator {
             type: this.getOpenAPIType(value),
             example: value,
           };
-        }
-
-        // Add to required if the value is not null/undefined and not an empty array
-        if (
-          value !== null &&
-          value !== undefined &&
-          !(Array.isArray(value) && value.length === 0)
-        ) {
-          schema.required!.push(key);
         }
       });
 
