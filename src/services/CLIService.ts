@@ -14,7 +14,7 @@ export class CLIService {
     const program = new Command();
 
     program
-      .name("swaggler")
+      .name("Swaggler")
       .description(
         "Swaggler helps you smuggle your existing API requests into structured, well-documented specs with ease"
       )

@@ -144,7 +144,7 @@ export class OpenAPIGenerator {
 
     // Add path parameters
     const pathParams = urlTemplate
-      ? urlTemplate.match(/:([^\/]+)/g)?.map((param) => param.substring(1)) ||
+      ? urlTemplate.match(/{([^}]+)}/g)?.map((param) => param.slice(1, -1)) ||
         []
       : pathName.match(/{([^}]+)}/g)?.map((param) => param.slice(1, -1)) || [];
 
@@ -161,6 +161,11 @@ export class OpenAPIGenerator {
 
     // Add query parameters
     Object.entries(curl.queryParams).forEach(([key, value]) => {
+      // Skip if this key is already a path parameter
+      if (pathParams.includes(key)) {
+        return;
+      }
+
       let example = value;
       let schemaType: "string" | "number" | "boolean" | "array" | "object" =
         typeof value as "string" | "number" | "boolean";
@@ -256,9 +261,19 @@ export class OpenAPIGenerator {
       );
     }
 
+    // Extract path parameters to filter them from query parameters
+    const pathParams =
+      pathName.match(/{([^}]+)}/g)?.map((param) => param.slice(1, -1)) || [];
+
+    // Filter out path parameters from query parameters
+    const filteredQueryParams = { ...curl.queryParams };
+    pathParams.forEach((param) => {
+      delete filteredQueryParams[param];
+    });
+
     // Generate query parameter schema
     const querySchema = this.generateSchema(
-      curl.queryParams,
+      filteredQueryParams,
       `${schemaPrefix}Query`,
       0,
       schemas
@@ -318,7 +333,7 @@ export class OpenAPIGenerator {
           ...(requestSchema
             ? { [`${schemaPrefix}Request`]: requestSchema }
             : {}),
-          ...(Object.keys(curl.queryParams).length > 0
+          ...(Object.keys(filteredQueryParams).length > 0
             ? { [`${schemaPrefix}Query`]: querySchema }
             : {}),
           ...schemas, // Include all nested schemas
@@ -359,21 +374,6 @@ export class OpenAPIGenerator {
       }
     }
     return { exists: false };
-  }
-
-  private static generateUniqueOperationId(
-    openapi: any,
-    baseOperationId: string
-  ): string {
-    let counter = 1;
-    let newOperationId = baseOperationId;
-
-    while (this.findDuplicateOperationId(openapi, newOperationId)) {
-      newOperationId = `${baseOperationId}_${counter}`;
-      counter++;
-    }
-
-    return newOperationId;
   }
 
   public static mergeWithExisting(openapi: any, appendPath: string): any {
