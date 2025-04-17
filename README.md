@@ -41,7 +41,7 @@ swaggler generate -c "curl https://api.example.com/users" -o swagger.yaml
 - `-i, --input <input>` - Path to a file containing curl command
 - `-o, --output <output>` - Output file path (default: swagger.yaml)
 - `-n, --name <name>` - Operation name
-- `-s, --schema <schema>` - URL template with parameters (e.g. /users/:id)
+- `-s, --schema <schema>` - URL template with parameters (e.g. /users/{id}/edit)
 - `-t, --tag <tag>` - Tag for the operation
 - `-p, --output-path <path>` - Output file path and directory
 - `-a, --append <file>` - Append to existing swagger file
@@ -58,7 +58,7 @@ swaggler generate -c "curl -X POST https://api.example.com/users -H 'Content-Typ
 swaggler generate -i curl-commands.txt -o users-api.yaml
 
 # Generate with custom operation name and tags
-swaggler generate -c "curl https://api.example.com/users/123" -n "getUser" -t "users" -o users-api.yaml
+swaggler generate -c "curl https://api.example.com/users/123" -n "getUser" -t "users" -o users-api.yaml -s /users/{id}
 
 # Append to existing swagger file
 swaggler generate -c "curl https://api.example.com/users" -a existing-swagger.yaml
