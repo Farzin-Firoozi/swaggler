@@ -26,7 +26,7 @@ export class OpenAPIGenerator {
     schemas: Record<string, OpenAPISchema> = {}
   ): OpenAPISchema {
     // Prevent infinite recursion for circular references
-    if (depth > 10) {
+    if (depth > 100) {
       return {
         type: "object",
         properties: {},
@@ -227,6 +227,26 @@ export class OpenAPIGenerator {
     return parameters;
   }
 
+  private static parseFormData(formData: string): Record<string, string> {
+    const result: Record<string, string> = {};
+    const params = new URLSearchParams(formData);
+    params.forEach((value, key) => {
+      result[key] = value;
+    });
+    return result;
+  }
+
+  private static getContentType(contentType: string | undefined): string {
+    if (!contentType) return "application/json";
+
+    // Ensure we're using the standard content type for form data
+    if (contentType === "application/x-www-form-urlencoded") {
+      return "application/x-www-form-urlencoded";
+    }
+
+    return contentType;
+  }
+
   public static generate(
     curl: ParsedCurl,
     response: any,
@@ -253,12 +273,22 @@ export class OpenAPIGenerator {
     // Generate request schema if there's data
     let requestSchema = null;
     if (curl.data) {
-      requestSchema = this.generateSchema(
-        curl.data,
-        `${schemaPrefix}Request`,
-        0,
-        schemas
-      );
+      if (curl.contentType === "application/x-www-form-urlencoded") {
+        const formData = this.parseFormData(curl.data as string);
+        requestSchema = this.generateSchema(
+          formData,
+          `${schemaPrefix}Request`,
+          0,
+          schemas
+        );
+      } else {
+        requestSchema = this.generateSchema(
+          curl.data,
+          `${schemaPrefix}Request`,
+          0,
+          schemas
+        );
+      }
     }
 
     // Extract path parameters to filter them from query parameters
@@ -278,6 +308,8 @@ export class OpenAPIGenerator {
       0,
       schemas
     );
+
+    const contentType = this.getContentType(curl.contentType);
 
     return {
       openapi: "3.0.0",
@@ -304,7 +336,7 @@ export class OpenAPIGenerator {
               ? {
                   required: true,
                   content: {
-                    [curl.contentType || "application/json"]: {
+                    [contentType]: {
                       schema: {
                         $ref: `#/components/schemas/${schemaPrefix}Request`,
                       },

@@ -8,9 +8,10 @@ export class CurlParser {
       headers: {},
       queryParams: {},
       data: undefined,
+      contentType: undefined,
     };
 
-    // Extract URL
+    // Extract URL + query params
     const urlMatch = curlCommand.match(
       /curl\s+'([^']+)'|curl\s+"([^"]+)"|curl\s+([^\s]+)/
     );
@@ -19,7 +20,6 @@ export class CurlParser {
       try {
         const parsedUrl = new URL(url);
         result.url = parsedUrl.origin + parsedUrl.pathname;
-        // Parse query parameters
         parsedUrl.searchParams.forEach((value, key) => {
           result.queryParams[key] = value;
         });
@@ -28,60 +28,97 @@ export class CurlParser {
       }
     }
 
-    // Extract method
+    // Extract explicit -X METHOD
     const methodMatch = curlCommand.match(/-X\s+([A-Z]+)/i);
     if (methodMatch) {
       result.method = methodMatch[1].toUpperCase();
     }
 
     // Extract headers
-    const headerMatches = curlCommand.matchAll(
+    for (const match of curlCommand.matchAll(
       /-H\s+'([^']+)'|-H\s+"([^"]+)"/g
-    );
-    for (const match of headerMatches) {
+    )) {
       const header = match[1] || match[2];
       const [key, ...valueParts] = header.split(": ");
-      const value = valueParts.join(": "); // Handle cases where value contains ": "
-      result.headers[key] = value;
+      result.headers[key] = valueParts.join(": ");
+
+      // Check for content-type header
+      if (key.toLowerCase() === "content-type") {
+        result.contentType = valueParts.join(": ");
+      }
     }
 
-    // Extract data
-    const dataMatch = curlCommand.match(
-      /-d\s+'([^']+)'|-d\s+"([^"]+)"|--data\s+'([^']+)'|--data\s+"([^"]+)"/
-    );
-    const formDataMatch = curlCommand.match(
-      /-F\s+'([^']+)'|-F\s+"([^"]+)"|--form\s+'([^']+)'|--form\s+"([^"]+)"/
-    );
+    // Gather all body/form flags
+    const dataRawMatches = Array.from(
+      curlCommand.matchAll(/--data-raw\s+['"]?([^'"\s]+)['"]?/gi)
+    ).map((m) => m[1]);
+    const dataMatches = Array.from(
+      curlCommand.matchAll(/(?:-d|--data)\s+['"]([^'"]+)['"]/gi)
+    ).map((m) => m[1]);
+    const urlEncMatches = Array.from(
+      curlCommand.matchAll(/--data-urlencode\s+['"]?([^'"\s]+)['"]?/gi)
+    ).map((m) => m[1]);
+    const formMatches = Array.from(
+      curlCommand.matchAll(/(?:-F|--form)\s+['"]([^'"]+)['"]/gi)
+    ).map((m) => m[1]);
 
-    if (formDataMatch) {
-      const formData =
-        formDataMatch[1] ||
-        formDataMatch[2] ||
-        formDataMatch[3] ||
-        formDataMatch[4];
-      try {
-        // Handle form data format: key=value
-        const formParts = formData.split("&");
-        result.data = {};
-        result.contentType = "multipart/form-data";
+    // If there's any body/form but no explicit -X, assume POST
+    if (
+      !methodMatch &&
+      (dataRawMatches.length ||
+        dataMatches.length ||
+        urlEncMatches.length ||
+        formMatches.length)
+    ) {
+      result.method = "POST";
+    }
 
-        formParts.forEach((part) => {
-          const [key, value] = part.split("=");
-          if (key && value) {
-            result.data[key] = value;
+    // Process multipart form fields
+    if (formMatches.length) {
+      result.contentType = "multipart/form-data";
+      result.data = {};
+      formMatches.forEach((pair) => {
+        const [key, val] = pair.split("=");
+        if (val !== undefined) {
+          result.data![key] = val;
+        }
+      });
+    }
+    // Process URL-encoded bodies
+    else if (dataMatches.length || urlEncMatches.length) {
+      result.contentType =
+        result.contentType || "application/x-www-form-urlencoded";
+      result.data = {};
+      [...dataMatches, ...urlEncMatches].forEach((chunk) => {
+        chunk.split("&").forEach((kv) => {
+          const [key, val] = kv.split("=");
+          if (val !== undefined) {
+            result.data![key] = decodeURIComponent(val);
           }
         });
-      } catch {
-        result.data = formData;
-      }
-    } else if (dataMatch) {
-      const data = dataMatch[1] || dataMatch[2] || dataMatch[3] || dataMatch[4];
-      try {
-        result.data = JSON.parse(data);
-        result.contentType = "application/json";
-      } catch {
-        result.data = data;
-        result.contentType = "application/x-www-form-urlencoded";
+      });
+    }
+    // Process raw JSON or other payloads
+    else if (dataRawMatches.length) {
+      const raw = dataRawMatches.join("&");
+
+      // If content-type header is set to application/x-www-form-urlencoded, parse as form data
+      if (result.contentType === "application/x-www-form-urlencoded") {
+        result.data = {};
+        raw.split("&").forEach((kv) => {
+          const [key, val] = kv.split("=");
+          if (val !== undefined) {
+            result.data![key] = decodeURIComponent(val);
+          }
+        });
+      } else {
+        try {
+          result.data = JSON.parse(raw);
+          result.contentType = "application/json";
+        } catch {
+          result.data = raw;
+          result.contentType = "text/plain";
+        }
       }
     }
 
@@ -93,7 +130,7 @@ export class CurlParser {
     curlCommand = curlCommand.replace(/-H\s+'Authorization:[^']+'/gi, "");
     curlCommand = curlCommand.replace(/-H\s+"Authorization:[^"]+"/gi, "");
 
-    // Remove common browser headers that aren't needed for API documentation
+    // Remove common browser headers
     const headersToRemove = [
       "accept-encoding",
       "accept-language",
@@ -109,14 +146,7 @@ export class CurlParser {
       "cache-control",
       "pragma",
       "accept",
-      "accept-language",
-      "accept-encoding",
-      "accept-language",
-      "accept-encoding",
-      "accept-language",
-      "accept-encoding",
     ];
-
     headersToRemove.forEach((header) => {
       const regex = new RegExp(
         `-H\\s+'${header}:[^']+'|\\s*-H\\s+"${header}:[^"]+"`,
@@ -127,9 +157,9 @@ export class CurlParser {
 
     // Clean up the command
     return curlCommand
-      .replace(/\\\s*\n/g, " ") // Remove line continuations
-      .replace(/\s+/g, " ") // Replace multiple spaces with single space
-      .replace(/\s*-H\s+/g, " -H ") // Fix header formatting
+      .replace(/\\\s*\n/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/\s*-H\s+/g, " -H ")
       .trim();
   }
 }

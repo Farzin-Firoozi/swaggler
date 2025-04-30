@@ -6,6 +6,18 @@ import { OpenAPIGenerator } from "./OpenAPIGenerator";
 import * as fs from "fs";
 import { OpenAPIOptions } from "../interfaces/types";
 import { SwagglerException } from "../errors/SwagglerException";
+import * as path from "path";
+
+// Read version from package.json
+const packageJsonPath = path.resolve(__dirname, "..", "..", "package.json");
+let pkgVersion = "0.0.0";
+try {
+  const pkgContents = fs.readFileSync(packageJsonPath, "utf-8");
+  const pkg = JSON.parse(pkgContents);
+  pkgVersion = pkg.version;
+} catch (err) {
+  console.warn(`Could not read version from package.json: ${err}`);
+}
 
 const execAsync = promisify(exec);
 
@@ -18,7 +30,7 @@ export class CLIService {
       .description(
         "Swaggler helps you smuggle your existing API requests into structured, well-documented specs with ease"
       )
-      .version("1.0.0");
+      .version(pkgVersion);
 
     program
       .command("generate")
@@ -27,17 +39,24 @@ export class CLIService {
       )
       .option(
         "-c, --curl <curl>",
-        "Curl command to convert or path to a file containing curl command"
+        "Curl command to convert or path to a file containing a curl command"
       )
-      .option("-i, --input <input>", "Path to a file containing curl command")
-      .option("-o, --output <output>", "Output file path", "swagger.yaml")
+      .option("-i, --input <input>", "Path to a file containing a curl command")
+      .option(
+        "-o, --output <output>",
+        "Output file name (defaults to swagger.yaml)",
+        "swagger.yaml"
+      )
+      .option(
+        "-p, --output-path <path>",
+        "Explicit output path (overrides --output if provided)"
+      )
       .option("-n, --name <name>", "Operation name", "")
       .option(
         "-s, --schema <schema>",
         "URL template with parameters (e.g. /users/:id/edit)"
       )
       .option("-t, --tag <tag>", "Tag for the operation")
-      .option("-p, --output-path <path>", "Output file path and directory")
       .option("-a, --append <file>", "Append to existing swagger file")
       .option("-S, --summary <summary>", "Custom summary for the operation")
       .option(
@@ -51,133 +70,97 @@ export class CLIService {
       )
       .action(async (options) => {
         try {
-          // Validate input options
+          // Must have at least one source of curl text
           if (!options.curl && !options.input) {
-            throw new Error("Either --curl or --input option must be provided");
+            throw new Error("Either --curl or --input must be provided");
           }
 
-          let curlCommand = options.curl;
-          let responseData;
-
-          // Handle curl command
-          // Check if the curl input is a file path
+          // Load the curl command (from option or file)
+          let curlCommand = options.curl || "";
           if (options.input) {
             if (!fs.existsSync(options.input)) {
               throw new Error(`Input file not found: ${options.input}`);
             }
             curlCommand = fs.readFileSync(options.input, "utf-8").trim();
-          } else if (fs.existsSync(options.curl)) {
-            curlCommand = fs.readFileSync(options.curl, "utf-8").trim();
+          } else if (fs.existsSync(curlCommand)) {
+            // if --curl points at an existing file, read from that
+            curlCommand = fs.readFileSync(curlCommand, "utf-8").trim();
           }
 
-          // Validate curl command format
+          // Sanity check
           if (!curlCommand.startsWith("curl ")) {
-            throw new Error(
-              'Invalid curl command format. Command must start with "curl"'
-            );
+            throw new Error('Curl command must start with "curl"');
           }
 
+          // Fetch or accept the response JSON
+          let responseData: any;
           if (!options.skipExecution) {
-            // Execute the curl command to get the response
-            console.log("Executing curl command...");
+            console.log("→ Executing curl …");
+            const { stdout, stderr } = await execAsync(curlCommand);
+            if (stderr) console.warn("⚠ warning from curl:", stderr);
             try {
-              const { stdout, stderr } = await execAsync(curlCommand);
-
-              if (stderr) {
-                console.warn("Warning from curl:", stderr);
-              }
-
-              // Parse the response
               responseData = JSON.parse(stdout);
-            } catch (error) {
-              if (error instanceof Error) {
-                throw new Error(
-                  `Failed to execute curl command: ${error.message}`
-                );
-              }
-              throw error;
+            } catch {
+              throw new Error("Failed to parse curl output as JSON");
             }
           } else {
             if (!options.response) {
               throw new Error(
-                "--response option is required when --skip-execution is used"
+                "--response is required when --skip-execution is set"
               );
             }
             try {
               responseData = JSON.parse(options.response);
-            } catch (error) {
-              throw new Error("Invalid JSON response provided");
+            } catch {
+              throw new Error("Invalid JSON passed to --response");
             }
           }
 
-          // Now sanitize the curl command for documentation
-          const sanitizedCurl = CurlParser.sanitize(curlCommand);
-          console.log("Sanitized curl command:", sanitizedCurl);
+          // Sanitize & parse
+          const sanitized = CurlParser.sanitize(curlCommand);
+          const parsed = CurlParser.parse(sanitized);
 
-          // Parse sanitized curl command
-          const parsedCurl = CurlParser.parse(sanitizedCurl);
+          // Decide on final output path (fallback to --output)
+          const outputFile = options.outputPath
+            ? options.outputPath
+            : options.output;
 
-          // Prepare options for OpenAPI generation
+          // Build OpenAPI options
           const openAPIOptions: OpenAPIOptions = {
             operationName: options.name,
             urlTemplate: options.schema,
             tags: options.tag ? [options.tag] : undefined,
-            outputPath: options.outputPath,
+            outputPath: outputFile,
             appendPath: options.append,
             summary: options.summary,
           };
 
-          // Generate OpenAPI documentation
+          // Generate + (optionally) merge
           let openapi = OpenAPIGenerator.generate(
-            parsedCurl,
+            parsed,
             responseData,
             openAPIOptions
           );
-
-          // If append option is provided, merge with existing swagger file
           if (options.append) {
-            try {
-              openapi = OpenAPIGenerator.mergeWithExisting(
-                openapi,
-                options.append
-              );
-            } catch (error) {
-              if (error instanceof SwagglerException) {
-                console.error(`Error: ${error.message}`);
-                if (error.details) {
-                  console.error("Details:", error.details);
-                }
-                process.exit(1);
-              }
-            }
+            openapi = OpenAPIGenerator.mergeWithExisting(
+              openapi,
+              options.append
+            );
           }
 
-          // Save to file
+          // Write it out
           OpenAPIGenerator.saveToFile(openapi, openAPIOptions);
           console.log(
-            `────────────────────────────────────────────────────────────────────`
+            `----- ✅🥳🚀 OpenAPI spec written to ${outputFile} -----`
           );
-          console.log(
-            `🥳🚀 OpenAPI documentation generated and saved to ${
-              openAPIOptions.outputPath ||
-              openAPIOptions.appendPath ||
-              "swagger.yaml"
-            } `
-          );
-          console.log(
-            `────────────────────────────────────────────────────────────────────`
-          );
-        } catch (error) {
-          if (error instanceof SwagglerException) {
-            console.error(`Error: ${error.message}`);
-            if (error.details) {
-              console.error("Details:", error.details);
-            }
-            process.exit(1);
+        } catch (err: any) {
+          if (err instanceof SwagglerException) {
+            console.error(`Error: ${err.message}`);
+            if (err.details) console.error("Details:", err.details);
           } else {
-            console.error(`Error: ${error}`);
-            process.exit(1);
+            console.error("Error:", err.message || err);
           }
+          process.exit(1);
         }
       });
 
