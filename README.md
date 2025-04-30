@@ -17,6 +17,9 @@ A CLI tool to convert curl commands and response examples to OpenAPI documentati
 - Support for custom operation names and tags
 - Ability to append to existing swagger files
 - URL template parameter support
+- Automatic schema generation from response data
+- Support for various content types (JSON, form-data, URL-encoded)
+- Automatic parameter extraction from URLs and headers
 - Simple and intuitive CLI interface
 
 ## Installation
@@ -69,6 +72,9 @@ swaggler generate -c "curl https://api.example.com/users" -a existing-swagger.ya
 
 # Skip curl execution and use provided response
 swaggler generate -c "curl https://api.example.com/users" -x -r '{"users": [{"id": 1, "name": "John"}]}'
+
+# Generate with form data
+swaggler generate -c "curl -X POST https://api.example.com/users -H 'Content-Type: application/x-www-form-urlencoded' -d 'name=John&age=30'" -o users-api.yaml
 ```
 
 ## Development
