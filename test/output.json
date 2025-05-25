@@ -1,0 +1,5 @@
+{
+  "brand": [{ "brand_fa": "آمون", "brand_id": 714 }],
+  "filter": [{ "title": "has_discount", "title_fa": "تخفیف‌دار" }],
+  "sort": [{ "title": "default", "title_fa": "پیش‌فرض" }]
+}

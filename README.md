@@ -51,6 +51,7 @@ swaggler generate -c "curl https://api.example.com/users" -o swagger.yaml
 - `-S, --summary <summary>` - Custom summary for the operation
 - `-x, --skip-execution` - Skip executing the curl command and use provided response
 - `-r, --response <response>` - JSON response to use when skip-execution is true
+- `-R, --response-file <file>` - Path to a JSON file containing the response to use when skip-execution is true
 
 ### Examples
 
@@ -70,8 +71,14 @@ swaggler generate -c "curl https://api.example.com/users" -S "Retrieve all users
 # Append to existing swagger file
 swaggler generate -c "curl https://api.example.com/users" -a existing-swagger.yaml
 
-# Skip curl execution and use provided response
+# Skip curl execution and use provided response directly
 swaggler generate -c "curl https://api.example.com/users" -x -r '{"users": [{"id": 1, "name": "John"}]}'
+
+# Skip curl execution and use response from a JSON file
+swaggler generate -c "curl https://api.example.com/users" -x -R response.json
+
+# Generate with both curl and response from files
+swaggler generate -i curl-command.txt -x -R response.json -o api-spec.yaml
 
 # Generate with form data
 swaggler generate -c "curl -X POST https://api.example.com/users -H 'Content-Type: application/x-www-form-urlencoded' -d 'name=John&age=30'" -o users-api.yaml

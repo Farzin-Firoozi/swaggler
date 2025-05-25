@@ -1,6 +1,6 @@
 {
   "name": "swaggler",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Swaggler helps you smuggle your existing API requests into structured, well-documented specs with ease",
   "main": "dist/index.js",
   "bin": {

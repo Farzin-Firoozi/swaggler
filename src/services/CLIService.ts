@@ -68,6 +68,10 @@ export class CLIService {
         "-r, --response <response>",
         "JSON response to use when skip-execution is true"
       )
+      .option(
+        "-R, --response-file <file>",
+        "Path to a JSON file containing the response to use when skip-execution is true"
+      )
       .action(async (options) => {
         try {
           // Must have at least one source of curl text
@@ -96,23 +100,43 @@ export class CLIService {
           let responseData: any;
           if (!options.skipExecution) {
             console.log("→ Executing curl …");
+
             const { stdout, stderr } = await execAsync(curlCommand);
             if (stderr) console.warn("⚠ warning from curl:", stderr);
+
             try {
               responseData = JSON.parse(stdout);
             } catch {
               throw new Error("Failed to parse curl output as JSON");
             }
           } else {
-            if (!options.response) {
+            if (!options.response && !options.responseFile) {
               throw new Error(
-                "--response is required when --skip-execution is set"
+                "Either --response or --response-file is required when --skip-execution is set"
               );
             }
             try {
-              responseData = JSON.parse(options.response);
-            } catch {
-              throw new Error("Invalid JSON passed to --response");
+              if (options.responseFile) {
+                if (!fs.existsSync(options.responseFile)) {
+                  throw new Error(
+                    `Response file not found: ${options.responseFile}`
+                  );
+                }
+                responseData = JSON.parse(
+                  fs.readFileSync(options.responseFile, "utf-8")
+                );
+              } else {
+                console.log("------------- response ----------------");
+                console.log(options.response);
+                console.log("--------------------------------");
+                responseData = JSON.parse(options.response);
+              }
+            } catch (err) {
+              throw new Error(
+                `Invalid JSON: ${
+                  err instanceof Error ? err.message : "Unknown error"
+                }`
+              );
             }
           }
 

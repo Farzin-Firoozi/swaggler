@@ -1,0 +1,13 @@
+curl 'https://api.snapp.express/express-search/mobile/search/page-configs/vendor_category?client=PWA&optionalClient=PWA&deviceType=PWA&appVersion=5.6.6&clientVersion=a4547bd9&optionalVersion=5.6.6&UDID=61e6358d-fec3-44fa-af4a-b1cab688346d&lat=35.774&long=51.347' \
+  -H 'accept: application/json, text/plain, */*' \
+  -H 'accept-language: fa-IR, fa;q=0.9,en;q=0.8,*;q=0.1' \
+  -H 'authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJzbmFwcGZvb2RfcHdhIiwiZXhwIjoxNzQ4MTg0MzE3LCJpYXQiOjE3NDgxODA1OTcsImp0aSI6ImE3ODI5OGJkLTI1OGEtNGE1My1iNTNiLWZjZTAzNjFjZTJmYSIsImt5YyI6MCwibmJmIjoxNzQ4MTgwNTk3LCJzY29wZXMiOlsibW9iaWxlX3YyIiwibW9iaWxlX3YxIiwid2VidmlldyJdLCJzZXNzaW9uIjp7ImlkIjoiNjFlNjM1OGQtZmVjMy00NGZhLWFmNGEtYjFjYWI2ODgzNDZkLTU1cTEydyIsImlzc3VlZF9hdCI6IjIwMjUtMDUtMTNUMTU6MTg6MTcuMzc2Nzk5NDErMDM6MzAiLCJzb3VyY2UiOiJyZWZyZXNoIiwidXNlcl9hZ2VudCI6ImlQaG9uZSAtIGlQaG9uZSAtIENQVSBpUGhvbmUgT1MgMTZfNiBsaWtlIE1hYyBPUyBYIC0gU2FmYXJpIDE2LjYifSwic3ViIjoiMDkwMTMwNzI1NzA6MGZjZTM3NjVkOTkyOTc4YzU0MWJmYmFlODgwMDMyYWEiLCJzdWJzaWR5IjowLCJ1ZGlkIjoiNjFlNjM1OGQtZmVjMy00NGZhLWFmNGEtYjFjYWI2ODgzNDZkIiwidWlkIjoiNDczMmNiMjYtYjU5OS00YmJlLWJhZGQtMGNkYjgyNmFhMzY1IiwidXNlckNvZGUiOiI1NXExMncifQ.akppAxzmnbOsajZfuWmdxMncgyw6KsLQMI6FhFX5n5FFTPajj2PLXUcf0TkXdebOYxur9pv9VOqCwD4MvXqlzrqyEceHSAtJxZQ3FOoLih5cjFawrhZyV4f8VfQBm--erdRUj-qofHkmhqsPIzeD8h5FMdeI8DOi3Tq8WQYhGYi2-L_hYT5nj34fQLwwRDlCc937kG7oVk2Qj4ruHyG_EZKPtS3A6KqmdicZh7TkExL9l-twkc9Zo05u8kTgO8Kbj_J6vrSAvFXv1kz6ly_JOUIfEbBJ-JdomFLysxqPkJdhQZQztKhj-38dNxkXX2ODUUqOUPb7p2iTsS3j-4GmSA' \
+  -H 'content-type: application/json' \
+  -H 'origin: https://express.snapp.market' \
+  -H 'priority: u=1, i' \
+  -H 'referer: https://express.snapp.market/' \
+  -H 'sec-fetch-dest: empty' \
+  -H 'sec-fetch-mode: cors' \
+  -H 'sec-fetch-site: cross-site' \
+  -H 'user-agent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1' \
+  --data-raw '{"vendor_code":"pzk621","category_id":731207,"configs":["sort","brand","filter"]}'
